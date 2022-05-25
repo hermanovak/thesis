@@ -51,7 +51,7 @@ get_csv <- function(datapath) {
     #this function determines whether to open an excel or csv file
     if (get_full_ext(datapath)=='xlsx' || get_full_ext(datapath)=='xls') {
         file <- read_excel(datapath)}
-    else {file <- read.csv(datapath, fileEncoding="UTF-8-BOM")}
+    else {file <- read.csv(datapath, fileEncoding="UTF-8-BOM",sep=";")}
 }
 
 rndr_nif_slice <- function(path,slice) {
@@ -219,29 +219,12 @@ ui <- fluidPage(theme = shinytheme("darkly"),
                                                  column(3, 
                                                         uiOutput("myui2")
                                                  ),
-                                                 
-                                                 #column(2, selectInput("plottype", "Select plot type", choices = c("Scatter", "Boxplot", "Bar plot"), selected = "Scatter")),
-                                                 #column(2, selectInput("datatype", "Select data type", choices = c("Raw data", "Z score"), selected = "Raw data")),
-                                                 #column(2, selectInput("plotvar", "Select variable", choices = c("Volume", "Max dimensions"), selected = "Mean volume")),
-                                                 
+
                                                  plotOutput("myplot", width = "100%"), 
                                                  
                                              )), #tabPanel + fluidPage  
                                     
-                                    
-                                    
-                                    # tabPanel("Data summary & Download",
-                                    #         fluidPage(
-                                    #             column(12, 
-                                    #                    br(),
-                                    #                    helpText("The following data was calculated from the uploaded files:")),
-                                    #                    #tableOutput("table")),         
-                                    #             # column(3,
-                                    #             #        textInput("downloadname", "Name of file to be saved:", value = "seg_data_analysis",placeholder=TRUE),
-                                    #             #        downloadButton('downloadData', 'Download table summary')
-                                    #             #        ),
-                                    # 
-                                    #         )),
+                        
                                     
                                     tabPanel('About this App',
                                              includeMarkdown('About.Rmd'))
@@ -257,19 +240,14 @@ server <- function(input, output) {
     shiny::addResourcePath('www', here::here("www"))
     #shinyjs::hide("table")
     
-    csvdatapath <- reactive({
-        input$csvin$datapath
-    })
     
-    data <- reactive({ 
-        #counter <- counter+1
-        #data()$counter+1
-        #req(input$segin)
+    imgdata <- reactive({ 
+      
         datapath <- input$segin$datapath
-        titles <- c("Filename", "#Pixels","Volume[cm^3]", "X_dim", "Y_dim", "Z_dim", "Necrotic core", "Enhancing core", "Non-enhancing core", "Edema", "Dummy_score")
-        
         
         if (is.null(datapath)) {
+            titles <- c("Filename", "#Pixels","Volume[cm^3]", "X_dim", "Y_dim", "Z_dim", "Necrotic core", "Enhancing core", "Non-enhancing core", "Edema", "Dummy_score")
+            
             if (input$defdata=="Cross-sectional")
             {images <- readRDS(file="./images2.Rda")
             labels <- list("brats_tcia_pat153_0002_seg.nii.gz", "brats_tcia_pat171_0001_seg.nii.gz", "brats_tcia_pat222_0122_seg.nii.gz", "brats_tcia_pat230_0199_seg.nii.gz", "brats_tcia_pat260_0001_seg.nii.gz", "brats_tcia_pat290_0305_seg.nii.gz", "brats_tcia_pat309_0001_seg.nii.gz")}
@@ -281,6 +259,7 @@ server <- function(input, output) {
         
         else {
             
+            titles <- c("Filename", "#Pixels","Volume[cm^3]", "X_dim", "Y_dim", "Z_dim", "Necrotic core", "Enhancing core", "Non-enhancing core", "Edema")
             labels <- strsplit(input$segin$name, " ")
             num_images=length(datapath)
             #images <- vector(mode = "list", length = num_images)
@@ -306,40 +285,71 @@ server <- function(input, output) {
                 images[i,8] <- reg$ne
                 images[i,9] <- reg$edema
                 
-            }
-            
-            csvdatapath <- input$csvin$datapath
-            titles <- c("Filename", "#Pixels","Volume[cm^3]", "X_dim", "Y_dim", "Z_dim", "Necrotic core", "Enhancing core", "Non-enhancing core", "Edema")
-            
-            if ((!is.null(csvdatapath))) {
-                scores <- get_csv(input$csvin$datapath)
-                images <- cbind.fill(images, scores, fill=NA)
-                #images <- cbind(images, scores)
-                titles <- c(titles[1:length(titles)],str_sub(colnames(scores),1,11))
             }}
         
+        df <- data.frame(cbind(labels,images))
+        df <- setNames(df, titles)
+            
+            
         
-        list(imgData=as.matrix(images), path=datapath, labels=labels, titles=titles)
-        
+        #list(imgMetrics=df, path=datapath)
+        list(imgMetrics=df, path=datapath, labels=labels, titles=titles)
+        #list(imgMetrics=as.matrix(images), path=datapath, labels=labels, titles=titles)
+    
     })
-    # 
-    # observeEvent(input$csvin$datapath, {
-    #         scores <- get_csv(input$csvin$datapath)
-    #         images <- cbind.fill(data()$imgData, scores, fill=NA)
-    #         #images <- cbind(images, scores)
-    #         titles <- c(data()$titles,colnames(scores))
-    #       
-    #     })
     
+    metadata <- reactive({
+      csvdatapath <- input$csvin$datapath
+      if ((!is.null(csvdatapath))) {
+      scores <- get_csv(csvdatapath)
+      #titles <- str_sub(colnames(scores),1,11)
+      #titles <- colnames(scores)
+      #df <- data.frame(scores)
+      #df <- setNames(scores, titles)
+      #out=list(scores=scores, titles=titles)
+      }
+       
+      else {
+        out=NULL
+      }
+      #df <- setNames(scores, titles)
+      #matrix <- as.matrix(df)
+      
+            #titles <- c("Filename", "#Pixels","Volume[cm^3]", "X_dim", "Y_dim", "Z_dim", "Necrotic core", "Enhancing core", "Non-enhancing core", "Edema")
+            
+            #if ((!is.null(csvdatapath))) {
+            #    scores <- get_csv(input$csvin$datapath)
+            #    images <- cbind.fill(images, scores, fill=NA)
+            #    #images <- cbind(images, scores)
+            #    titles <- c(titles[1:length(titles)],str_sub(colnames(scores),1,11))
+            #}
+    })
     
+    data <- reactive({
+      if ((!is.null(metadata()))) {
+          md <- metadata()
+          images <- imgdata()$imgMetrics
+          images$Filename <- as.character(images$Filename)
+          images <- dplyr::left_join(images, md ,by='Filename')  
+      
+      list(imgMetrics=images, path=imgdata()$datapath, labels=imgdata()$labels, titles=imgdata()$titles)
+      }
+      
+      else {
+        out <- imgdata()
+      }
+      
+    })
+    
+
     ###### sidebar #############
     
     observeEvent(input$calc, ignoreNULL = FALSE, {
         output$pix <- renderText({
             req(input$calc)
             info <- data()
-            images <- info$imgData
-            mpix <- as.integer(mean(images[,1],na.rm=TRUE))
+            images <- info$imgMetrics
+            mpix <- as.integer(mean(unlist(images[,2]),na.rm=TRUE))
         })
     })
     
@@ -348,23 +358,13 @@ server <- function(input, output) {
         })
     })
     
-    observeEvent(input$csvin, ignoreNULL = FALSE, { #becomes empty when new files are uploaded
-        info <- csvdatapath()
-        info <- data()
-    })
-    
-    # observeEvent(input$cvsin, { #this needs work
-    #   input$csvin$datapath <- NULL
-    #   print(input$csvin$datapath)
-    #   print(is.null(input$csvin$datapath))
-    # })
     
     observeEvent(input$calc, {
         output$vol <- renderText({
             req(input$calc)
             info <- data()
-            images <- info$imgData
-            mvol <- as.integer(mean(images[,2],na.rm=TRUE))
+            images <- info$imgMetrics
+            mvol <- as.integer(mean(unlist(images[,3]),na.rm=TRUE))
         })
     })
     
@@ -379,7 +379,7 @@ server <- function(input, output) {
     output$myui <- renderUI({
         #req(input$csvin, input$segin)
         info <- data()
-        vars <- info$titles[2:length(info$titles)]
+        vars <- colnames(info$imgMetrics[2:length(info$imgMetrics)])
         selectInput("x_choice", "Select x to correlate", unique(vars) , selected="Volume[cm^3]")
         
     })
@@ -387,40 +387,25 @@ server <- function(input, output) {
     output$myui2 <- renderUI({
         #req(input$csvin, input$segin)
         info <- data()
-        vars <- info$titles[2:length(info$titles)]
+        vars <- colnames(info$imgMetrics[2:length(info$imgMetrics)])
         selectInput("y_choice", "Select y variable to correlate", unique(vars), selected="X_dim")
         
     })
     
     output$myplot <- renderPlot({
-        # if (is.null(input$csvin$datapath)) {
-        #   plot(1,1,col="white")
-        #   text(1,1,"No data uploaded")
-        # }
-        # else {
+
         req(input$x_choice, input$y_choice)
         
         info <- data()
-        df <- data.frame(cbind(info$labels,info$imgData)) 
-        df <- setNames(df, info$titles) #%>% 
+        df <- data()$imgMetrics
+
         chosenx <- as.character(input$x_choice)
         xvar <- unlist(df[chosenx])
         choseny <- as.character(input$y_choice)
         yvar <- unlist(df[choseny])
-        
-        #yvar <- setNames(data.frame(scores), colnames(scores))
+
         
         title <- "Segmentation quality" 
-        
-        # 
-        #             if(input$datatype == "Z score") {
-        #               idx <- sapply(yvar, class)=="numeric"
-        #               yvar[, idx] <- lapply(yvar[, idx], function(x) (x-mean(x))/sd(x))
-        #               ylab <- "z score"
-        #               title <- paste0("Z score of ", title)}
-        
-        #plot(y=yvar,x=xvar, main=title, ylab=input$y_choice, xlab = input$x_choice) 
-        #ylim=c(min(yvar)-0.05*min(yvar),max(yvar)+0.1*max(yvar)))
         
         #ggplot and Bland-altman
         df <- data.frame(xvar,yvar)
@@ -444,51 +429,40 @@ server <- function(input, output) {
     ##### Segmentation analysis ############   
     table_data <- reactive({
         info <- data()
-        df <- data.frame(cbind(info$labels,info$imgData)) 
-        df <- setNames(df, info$titles) #%>% 
-        #formatRound(c("#Pixels","Volume[cm^3]", "X_dim", "Y_dim", "Z_dim"), digits=2)
-        #df <- apply(df,2,as.character)
-        #table_order <- ranklist_data()
+        df <- data()$imgMetrics
+
     })
     
-    rv <- reactiveValues(data = data.frame())
+    #rv <- reactiveValues(data = data.frame())
     
-    observe({rv$data <- data()$labels})
-    
-    
-    output$ranklist <- renderUI({
+       output$ranklist <- renderUI({
         
-        ranklist <- rank_list(
+        ranklist2 <- rank_list(
             text = "Organize data points in time by dragging",
-            labels = rv$data,
-            input_id = "ranklist",
+            #labels = rv()$data,
+            labels <- data()$labels,
+            input_id = "ranklist2",
             class = c("default-sortable", "custom-sortable"),
         )
         
+    }) 
+    
+    rv <- reactive({
+      rnk <- rank(input$ranklist2)
+      
+      if((!is_empty(rnk))&&(length(rnk)==nrow(table_data()))) {
+        orgdata <- table_data()[rnk[1:nrow(table_data())],1:ncol(table_data())]
+        labels <- table_data()$Filename[rnk]}
+      
+      else {
+        orgdata <- table_data()
+        labels <- table_data()$Filename
+      }
+      
+      list(data=labels,orgdata=orgdata)
     })
     
-    # toListen <- reactive({
-    #   list(input$ranklist,data())
-    # })
-    
-    observeEvent(input$ranklist, {
-        rnk <- rank(input$ranklist)
-        rv$orgdata <- table_data()[rnk,1:ncol(table_data())]
-    })
-    
-    # observeEvent(data(), {
-    #   rnk <- rank(input$ranklist)
-    #   rv$orgdata <- table_data()[rnk,1:ncol(table_data())]
-    # })
-    
-    #   observe({
-    #   if(any(is.na(rv$orgdata))==TRUE) {
-    #     hide("rankedPlot")
-    #   } else {
-    #     show("rankedPlot")
-    #   }
-    # })    
-    
+
     observe({
         if(input$loplotvar == "Tumor components") {
             
@@ -504,8 +478,8 @@ server <- function(input, output) {
     output$rankedplot <- renderPlot({
         req(input$loplotit)
         
-        info <- data()
-        df <- rv$orgdata
+        #info <- data()
+        df <- rv()$orgdata
         xvar <- 1:nrow(df)
         
         if(input$loplotvar == "Max dimensions") {
@@ -550,21 +524,10 @@ server <- function(input, output) {
                 #yvar <- df[7:10]
                 title <- "Tumor region volumes"
                 ylab <- "volume [cm^3]"
-                #nc <- as.numeric(df$`Necrotic core`)
-                #edema <- as.numeric(df$Edema)
-                #ne <- as.numeric(df$`Non-enhancing core`)
-                #ec <- as.numeric(df$`Enhancing core`)
-                
-                #yvar <- data.frame(nc, edema, ne, ec)
+
                 
                 if(input$lodatatype == "Z score") {
                     
-                    # nc <- (nc - mean(nc))/sd(nc)
-                    # edema <- (edema - mean(edema))/sd(edema)
-                    # ne <- (ne - mean(ne))/sd(ne)
-                    # ec <- (ec - mean(ec))/sd(ec)
-                    # 
-                    # yvar <- data.frame(nc, edema, ne, ec)
                     
                     l <- lapply(yvar,as.numeric)
                     yvar <- data.frame(lapply(l, function(x) (x-mean(x))/sd(x)))
@@ -572,14 +535,7 @@ server <- function(input, output) {
                     ylab <- "z score"
                     title <- paste0("Z score of ", title)}
                 
-                #for ( c in yvar ) plot( c, type="l" )
-                #colnames(yvar) <- NULL
-                #plot(y=unlist(yvar[1]),x=xvar,  col="red", main=title, ylab=ylab, xlab = "Segmentation no.", ylim=c(min(yvar)-0.05*min(yvar),max(yvar)+0.1*max(yvar)))
-                #col <- c("red","green", "blue", "brown")
-                #for (i in 2:ncol(yvar)) {
-                #  points(y=unlist(yvar[i]), x=xvar, col=col[i])}
-                #points(y=ne, x=xvar, col="blue")
-                #points(y=ec, x=xvar, col="brown")
+
                 matplot(x=xvar,y=yvar,pch=1,col=1:4,main=title,ylab=ylab,xlab="Segmentation no.")
                 legend("topleft", legend = colnames(yvar), col = 1:4, fill = 1:4)
                 axis(1, xvar)
@@ -670,49 +626,22 @@ server <- function(input, output) {
     
     
     output$table <- renderTable({
-        return(rv$orgdata)
+      
+        return(rv()$orgdata)
     })
     
-    # output$table <- renderDT(
-    # 
-    #   input$rank_list_basic,
-    #   #expr <-  rank_list_basic,
-    #   expr <- table_data(),
-    #   #expr <- apply(df,2,as.numeric),
-    #   style = "bootstrap",
-    #   selection = "single",
-    # 
-    #   options = list(
-    #     pageLength=12,
-    #     searching = FALSE,
-    #     info = TRUE
-    #   )
-    # )
-    
+
     output$downloadData <- downloadHandler(
         
         filename = function() {
             paste(input$downloadname,'.csv', sep='')
         },
         content = function(file) {
-            write.csv2(apply(rv$orgdata,2,as.character), file)
+            write.csv2(apply(rv()$orgdata,2,as.character), file)
             #write_csv2(table_data(),file)
         }
     )
     
-    # 
-    # output$text <- renderUI({
-    #   req(input$submit)
-    #   nifImg <- data()
-    #   l <- vector(mode = "list", length = input$numpts)
-    #   for(n in 1:input$numpts)
-    #     {nif <- get_nif_path(nifImg$path[n])
-    #     dims <- calc_dims(nif)
-    #     nam <- paste0("pt", n)
-    #     p <- paste("Pt", n, ": ", as.integer(dims$x_dim), "in x,", as.integer(dims$y_dim), "in y,", as.integer(dims$z_dim), "in z")
-    #     l[[n]] <- assign(nam,p)}
-    #     HTML(paste(c(l[1:n]), sep = '<br/>'))
-    #     })
     
     
 }#server

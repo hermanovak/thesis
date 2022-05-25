@@ -7,9 +7,9 @@ output: html_document
 
 ## About this app
 
-This is a brain lesions segmentation visualization tool. An easy-to-use GUI can be found at <https://hermanovak.shinyapps.io/brain-tumor-segmentation-viz/?_ga=2.196050924.1776031869.1643644398-1234342909.1632134229>. 
+This is a brain lesions segmentation visualization tool. An easy-to-use GUI can be found at <https://hermanovak.shinyapps.io/thesis/?_ga=2.144535797.153055388.1652869135-1234342909.1632134229>. 
 
-To use in R Studio, download the code from my Github page (<https://github.com/hermanovak/brain-lesion-segmentation-viz/tree/main>), open the file app.R and run it using the following command:
+To use in R Studio, download the code from my Github page (<https://github.com/hermanovak/thesis>), open the file app.R and run it using the following command:
 
 ```{r cars}
 runApp()
@@ -17,10 +17,9 @@ runApp()
 
 ## Data
 
-The user can upload their own data in NIfTI [1] format (with compressed files also accepted). The uploaded segmentation masks must follow the BRATS convention, i.e. have pixel values of 0 for background and 1 or higher for the lesion mask. If tumor regions are differentiated, 1 must be used for the Necrotic core, 2 for Edema, 3 for Non-enhancing core and 4 for Enhancing core. 
+The user can upload their own data in NIfTI [1] format (with compressed files also accepted). The uploaded segmentation masks must follow the BRATS [3] convention, i.e. have pixel values of 0 for background and 1 or higher for the lesion mask. If tumor regions are differentiated, 1 must be used for the Necrotic core, 2 for Edema, 3 for Non-enhancing core and 4 for Enhancing core. 
 
-A default dataset is provided to demonstrate the functionality in case the user does not upload own data. The default longitudinal data was adopted from the BRATS 2015 longitudinal dataset of High-grade glioma [2] and the default cross-sectional data was adopted from GBM data done by DeepMedic (specify more!)
-
+A default data set is provided to demonstrate the functionality in case the user does not upload own data. The default longitudinal data was adopted from the BRATS 2015 longitudinal data set of high-grade glioma, and the default cross-sectional data set groups together only the initial image segmentations from 7 different patients of the 2015 BraTS longitudinal HGG data set.
 The file with extra data must be an excel or csv file and it must have the data organized in columns with the first row containing labels of each column. An example file can be downloaded [here](./scores.csv).
 
 ## References
