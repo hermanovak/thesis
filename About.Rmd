@@ -20,7 +20,7 @@ runApp()
 The user can upload their own data in NIfTI [1] format (with compressed files also accepted). The uploaded segmentation masks must follow the BRATS [3] convention, i.e. have pixel values of 0 for background and 1 or higher for the lesion mask. If tumor regions are differentiated, 1 must be used for the Necrotic core, 2 for Edema, 3 for Non-enhancing core and 4 for Enhancing core. 
 
 A default data set is provided to demonstrate the functionality in case the user does not upload own data. The default longitudinal data was adopted from the BRATS 2015 longitudinal data set of high-grade glioma, and the default cross-sectional data set groups together only the initial image segmentations from 7 different patients of the 2015 BraTS longitudinal HGG data set.
-The file with extra data must be an excel or csv file and it must have the data organized in columns with the first row containing labels of each column. An example file can be downloaded [here](./scores.csv).
+The file with extra data must be an excel or csv file and it must have the data organized in columns with the first row containing labels of each column. The first column must be titled "Filename" and contain the file names exactly as those of the uploaded files. An example file can be downloaded [here](./Example metadata.csv).
 
 ## References
 1. NIfTI: — Neuroimaging Informatics Technology Initiative [Document];. Available from: <https://nifti.nimh.nih.gov/>.
